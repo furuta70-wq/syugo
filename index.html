@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3f3ee">
+<title>主語を変える。</title>
+<style>
+:root{--bg:#f3f3ee;--paper:#fffefa;--ink:#172923;--muted:#63746b;--line:#dce3d9;--accent:#087658;--dark:#153f34;--radius:22px;--red:#c7384b;--yellow:#987000;--blue:#2467cc;--green:#158363;--purple:#744ab8}
+*{box-sizing:border-box}
+html{height:100%;background:var(--bg)}body{margin:0;min-height:100%;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;line-height:1.42;-webkit-font-smoothing:antialiased}
+button,input{font:inherit}button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}button:focus-visible,input:focus-visible{outline:3px solid #65bd9f;outline-offset:3px}button:disabled{cursor:default}
+.frame{width:min(100% - 44px,1192px);margin-inline:auto}
+.screen{display:none}.screen.active{display:block}.screen.enter{animation:screenIn .44s cubic-bezier(.16,1,.28,1) both}.screen.leaving{animation:screenLeave .19s ease-in both}
+@keyframes screenIn{from{opacity:0;transform:translateY(19px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes screenLeave{to{opacity:0;transform:translateY(-12px) scale(.987)}}
+/* 人数をタップすれば開始。追加操作はない */
+#home{padding:clamp(20px,4.5vh,42px) 0 28px}.hero{position:relative;isolation:isolate;overflow:hidden;background:var(--dark);color:#fff;border-radius:25px;min-height:clamp(170px,26vh,230px);display:flex;align-items:center;padding:clamp(22px,4.7vw,53px)}
+.hero::after{content:"誰";position:absolute;z-index:-1;right:5%;top:50%;transform:translateY(-53%) rotate(-12deg);color:#bcdf9e;font-weight:900;font-size:clamp(160px,24vw,255px);opacity:.17;line-height:1;pointer-events:none}
+.hero h1{margin:10px 0 8px;font-size:clamp(34px,5.1vw,61px);line-height:1.21;letter-spacing:-.064em;font-weight:950}
+.start-panel{padding:clamp(23px,3.6vw,36px) clamp(14px,3vw,35px) clamp(22px,3vw,32px);margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:23px;text-align:center}
+.start-panel h2{margin:2px 0 0;font-weight:950;letter-spacing:-.03em;font-size:clamp(22px,3vw,30px)}
+.count-buttons{margin:25px auto 0;max-width:760px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(7px,1.7vw,15px)}
+.count-button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:0;min-height:clamp(92px,11vw,131px);border:0;border-radius:18px;color:#fff;font-size:clamp(41px,5vw,60px);line-height:1;font-weight:950;box-shadow:0 5px 0 #00000020;transition:transform .14s ease,box-shadow .14s ease,filter .14s ease;overflow:hidden}
+.count-button::before{content:"";position:absolute;width:120px;height:120px;top:-85px;right:-60px;border-radius:100%;border:12px solid #ffffff20;pointer-events:none}
+.count-button .count-unit{font-size:13px;font-weight:900;letter-spacing:.03em;margin-top:9px;opacity:.83}
+.count-button:hover{transform:translateY(-3px);filter:brightness(1.035);box-shadow:0 8px 0 #0000001b}.count-button:active,.count-button.picked{transform:translateY(3px) scale(.975);box-shadow:0 2px 0 #00000026}
+.count-button[data-count="1"]{background:var(--red)}.count-button[data-count="2"]{background:var(--yellow);color:#fff}.count-button[data-count="3"]{background:var(--blue)}.count-button[data-count="4"]{background:var(--green)}.count-button[data-count="5"]{background:var(--purple)}
+/* 話題を上に、主語は舞台の中央に */
+#play{padding:20px 0 24px;display:none;flex-direction:column;min-height:100dvh}#play.active{display:flex}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:34px;margin-bottom:10px}
+.back{border:0;background:none;padding:8px 4px;color:var(--accent);font-size:13px;font-weight:900}.back:hover{text-decoration:underline}
+
+.topic-box{position:relative;flex-shrink:0;overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--paper);padding:clamp(16px,2.4vw,27px) clamp(19px,2.7vw,30px);box-shadow:0 3px 0 #dce6da45;transform-origin:center}
+.topic-box::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--accent)}
+
+.topic-title{margin:6px 0 5px;font-size:clamp(23px,3vw,38px);font-weight:950;line-height:1.36;letter-spacing:-.044em;overflow-wrap:anywhere;text-wrap:balance}
+.topic-context{margin:0;color:var(--muted);font-size:clamp(12px,1.25vw,14px);line-height:1.48}
+.roles{display:grid;grid-template-columns:repeat(var(--num),minmax(0,1fr));gap:clamp(9px,1.35vw,15px);flex:1;min-height:0;max-height:clamp(300px,54dvh,535px);margin-top:14px;align-items:stretch}
+.role-card{--card:#c7384b;--text:#fff;--sub:#ffffffcf;position:relative;isolation:isolate;display:flex;justify-content:center;align-items:center;flex-direction:column;min-width:0;min-height:clamp(185px,36vh,420px);padding:32px clamp(8px,1.2vw,20px) 25px;border-radius:22px;background:var(--card);color:var(--text);text-align:center;overflow:hidden;box-shadow:0 3px 0 #0000000c}
+.role-card::after{content:"";position:absolute;z-index:-1;width:270px;height:270px;border:23px solid #ffffff16;border-radius:50%;right:-155px;bottom:-165px;pointer-events:none;transform:rotate(-18deg)}
+.role-card[data-player="1"]{--card:var(--red)}.role-card[data-player="2"]{--card:var(--yellow);--text:#fff;--sub:#ffffffd9}.role-card[data-player="3"]{--card:var(--blue)}.role-card[data-player="4"]{--card:var(--green)}.role-card[data-player="5"]{--card:var(--purple)}
+.player-label{position:absolute;left:clamp(13px,1.5vw,19px);top:clamp(12px,1.5vw,19px);font-size:clamp(12px,1.2vw,14px);letter-spacing:.02em;font-weight:900;color:var(--sub)}
+.role-name{font-size:clamp(27px,3.25vw,53px);line-height:1.34;font-weight:950;letter-spacing:-.052em;overflow-wrap:anywhere;word-break:normal;text-wrap:balance;max-width:100%}
+.role-name.long{font-size:clamp(23px,2.7vw,42px)}.role-name.very-long{font-size:clamp(19px,2.3vw,35px)}
+.roles[data-count="1"]{max-width:820px;width:100%;margin-inline:auto}.roles[data-count="1"] .role-name{font-size:clamp(49px,7.6vw,105px)}.roles[data-count="1"] .role-name.long{font-size:clamp(38px,5.8vw,75px)}.roles[data-count="1"] .role-name.very-long{font-size:clamp(31px,4.4vw,57px)}
+.roles[data-count="2"] .role-name{font-size:clamp(34px,5vw,76px)}.roles[data-count="2"] .role-name.long{font-size:clamp(29px,4vw,57px)}.roles[data-count="2"] .role-name.very-long{font-size:clamp(23px,3.2vw,45px)}
+/* Two equal, deliberate action buttons with contrasting colors and a large tap area. */
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.3vw,16px);width:min(100%,850px);margin:17px auto 0;flex-shrink:0}
+.action{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;min-height:74px;padding:13px 17px;border:0;border-radius:18px;color:#fff;font-size:clamp(17px,1.85vw,22px);font-weight:950;letter-spacing:-.04em;line-height:1.2;transition:transform .16s cubic-bezier(.2,.85,.2,1),filter .16s,box-shadow .16s;box-shadow:0 6px 0 var(--press)}
+.action::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(120deg,#ffffff24,transparent 40%,transparent 70%,#00000015);pointer-events:none}
+.action::after{content:"";position:absolute;inset:0;border:1px solid #ffffff1d;border-radius:inherit;pointer-events:none}
+.action-primary{--press:#075641;background:#078264}.action-secondary{--press:#243c65;background:#335b91}
+.action:hover:not(:disabled){transform:translateY(-3px);filter:brightness(1.06);box-shadow:0 9px 0 var(--press)}
+.action:active:not(:disabled){transform:translateY(5px) scale(.99);box-shadow:0 1px 0 var(--press)}
+.action:disabled{opacity:.81}.action-icon{display:grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#ffffff20;font-size:25px;line-height:1;font-weight:800}
+/* Page arrival, role replacement, and full-topic replacement have distinct rhythms. */
+#home .hero,#home .start-panel{transform-origin:center}
+#home.enter .hero{animation:homeHero .52s cubic-bezier(.15,1,.27,1) both}
+#home.enter .start-panel{animation:homePanel .55s cubic-bezier(.15,1,.27,1) both .055s}
+@keyframes homeHero{from{opacity:0;transform:translateY(15px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes homePanel{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.role-card.swap-out .role-name{animation:swapOut .17s cubic-bezier(.45,0,.8,.3) both;animation-delay:var(--delay,0ms)}
+.role-card.swap-in .role-name{animation:swapIn .42s cubic-bezier(.15,.93,.25,1) both;animation-delay:var(--delay,0ms)}
+.role-card.swap-in::before{content:"";position:absolute;z-index:1;pointer-events:none;inset:0;background:linear-gradient(110deg,transparent 12%,#ffffff32 47%,transparent 82%);transform:translateX(-140%);animation:shine .58s ease-out both;animation-delay:var(--delay,0ms)}
+.role-card.reveal{animation:cardRise .48s cubic-bezier(.15,.95,.25,1) both;animation-delay:var(--delay,0ms)}
+.topic-box.reveal{animation:topicIn .48s cubic-bezier(.15,.95,.25,1) both}
+.topic-box.reveal::after{content:"";position:absolute;pointer-events:none;inset:0;background:linear-gradient(105deg,transparent 15%,#cce7d34a 50%,transparent 85%);transform:translateX(-135%);animation:shine .6s ease-out both}
+.topic-box.exit{animation:stageOut .2s cubic-bezier(.55,0,1,.42) both}
+.roles.exit .role-card{animation:stageCardOut .2s cubic-bezier(.55,0,1,.42) both;animation-delay:calc(var(--delay,0ms) * .35)}
+@keyframes shine{to{transform:translateX(140%)}}
+@keyframes swapOut{to{opacity:0;transform:translateY(-21px) scale(.91);filter:blur(2px)}}
+@keyframes swapIn{0%{opacity:0;transform:translateY(24px) scale(.92);filter:blur(2px)}72%{opacity:1;transform:translateY(-3px) scale(1.012);filter:blur(0)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes cardRise{from{opacity:0;transform:translateY(35px) scale(.958)}70%{opacity:1}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes topicIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes stageOut{to{opacity:0;transform:translateY(-18px) scale(.985)}}
+@keyframes stageCardOut{to{opacity:0;transform:translateY(-20px) scale(.96)}}
+@media(min-width:701px) and (min-height:1020px){#play{padding-top:clamp(30px,6vh,90px)}}
+@media(min-width:701px) and (max-width:1020px){.roles[data-count="5"] .role-name{font-size:clamp(21px,2.65vw,30px)}.roles[data-count="5"] .role-name.long{font-size:clamp(19px,2.45vw,26px)}.roles[data-count="5"] .role-name.very-long{font-size:clamp(17px,2.1vw,23px)}}
+@media(max-width:700px){
+ .frame{width:calc(100% - 28px)}
+ #home{padding:17px 0 20px}.hero{border-radius:20px;padding:27px 23px;min-height:175px}.hero::after{right:-44px;font-size:185px}.start-panel{border-radius:19px;padding:24px 12px 27px;margin-top:12px}.count-buttons{gap:7px;margin-top:20px}.count-button{border-radius:12px;min-height:clamp(77px,15vw,97px);font-size:clamp(32px,8vw,48px)}.count-button .count-unit{font-size:10px;margin-top:6px}
+ #play{min-height:100dvh;padding:11px 0 max(14px,env(safe-area-inset-bottom))}.topline{min-height:30px;margin-bottom:5px}.back{font-size:12px}
+ .topic-box{border-radius:17px;padding:13px 16px 14px}.topic-title{font-size:clamp(20px,5.2vw,30px);line-height:1.33;margin:4px 0}.topic-context{font-size:11px;line-height:1.45}
+ .roles{max-height:none;margin-top:9px;gap:8px}.role-card{border-radius:16px;padding:25px 11px 9px;min-height:0}.player-label{left:12px;top:9px;font-size:12px}
+ .roles[data-count="3"],.roles[data-count="4"],.roles[data-count="5"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .roles[data-count="3"] .role-card:last-child,.roles[data-count="5"] .role-card:last-child{grid-column:1 / -1}
+ .roles[data-count="3"],.roles[data-count="5"]{grid-template-rows:repeat(2,minmax(0,1fr))}.roles[data-count="5"]{grid-template-rows:repeat(3,minmax(0,1fr))}
+ .roles[data-count="4"]{grid-template-rows:repeat(2,minmax(0,1fr))}
+ .roles[data-count="3"] .role-name,.roles[data-count="4"] .role-name,.roles[data-count="5"] .role-name{font-size:clamp(22px,5.15vw,32px)}
+ .roles[data-count="3"] .role-name.long,.roles[data-count="4"] .role-name.long,.roles[data-count="5"] .role-name.long{font-size:clamp(19px,4.55vw,28px)}
+ .roles[data-count="3"] .role-name.very-long,.roles[data-count="4"] .role-name.very-long,.roles[data-count="5"] .role-name.very-long{font-size:clamp(17px,3.85vw,23px)}
+ .roles[data-count="1"] .role-name{font-size:clamp(48px,11vw,86px)}.roles[data-count="1"] .role-name.long{font-size:clamp(34px,8vw,60px)}.roles[data-count="1"] .role-name.very-long{font-size:clamp(28px,6.6vw,48px)}
+ .roles[data-count="2"] .role-name{font-size:clamp(32px,6.7vw,55px)}.roles[data-count="2"] .role-name.long{font-size:clamp(28px,6vw,48px)}.roles[data-count="2"] .role-name.very-long{font-size:clamp(24px,5vw,39px)}
+ .action-row{gap:9px;margin-top:12px}.action{border-radius:14px;min-height:62px;padding:10px 7px;font-size:clamp(13px,3.85vw,18px);gap:6px;box-shadow:0 4px 0 var(--press)}.action-icon{width:26px;height:26px;font-size:20px}
+}
+@media(max-width:375px){.role-name{letter-spacing:-.06em}.topic-title{font-size:20px}.role-card{padding-left:7px;padding-right:7px}.roles[data-count="3"] .role-name.long,.roles[data-count="4"] .role-name.long,.roles[data-count="5"] .role-name.long{font-size:18px}.roles[data-count="3"] .role-name.very-long,.roles[data-count="4"] .role-name.very-long,.roles[data-count="5"] .role-name.very-long{font-size:16px}.count-button{min-height:75px}.topic-context{font-size:10.5px}}
+@media(max-height:680px) and (max-width:700px){.topic-box{padding:10px 14px}.topic-title{font-size:20px;margin:2px 0}.topic-context{line-height:1.32}.topline{margin-bottom:2px}.roles{margin-top:7px;gap:7px}.role-card{padding-top:23px;padding-bottom:6px}.player-label{top:6px;font-size:11px}.action-row{margin-top:8px}.action{min-height:55px}}
+@media(max-height:530px) and (orientation:landscape){#play{min-height:100dvh}.topic-box{padding:8px 13px}.topic-title{font-size:21px;margin:2px 0}.topic-context{font-size:11px}.roles{min-height:90px;gap:8px}.role-card{min-height:0}.action-row{margin-top:8px}.action{min-height:42px}}
+/* iPad Safariでも視覚的に分かる、GPU向けtransform中心の演出 */
+.scene-wipe{position:fixed;z-index:80;pointer-events:none;left:-25vw;top:-25vh;width:150vw;height:150vh;opacity:0;transform:translate3d(-115%,0,0) skewX(-12deg);background:linear-gradient(105deg,transparent 0%,#137e62 28%,#123f32 58%,transparent 90%);will-change:transform}
+.scene-wipe.go{animation:sceneWipe .69s cubic-bezier(.44,.03,.33,1) both}
+@keyframes sceneWipe{0%{opacity:0;transform:translate3d(-115%,0,0) skewX(-12deg)}9%{opacity:.95}88%{opacity:.95}100%{opacity:0;transform:translate3d(115%,0,0) skewX(-12deg)}}
+.count-button.picked{animation:countSelect .29s cubic-bezier(.18,.9,.24,1) both}
+@keyframes countSelect{0%{transform:translateY(3px) scale(.97)}55%{transform:translateY(-8px) scale(1.08)}100%{transform:translateY(1px) scale(.99)}}
+/* シャッフルの文字送りと、カード全体の着地を明瞭に */
+.role-card.rolling{box-shadow:0 0 0 5px #ffffff33 inset,0 9px 25px #00000018;transition:box-shadow .15s}
+.role-card.rolling .role-name{animation:slotTick .12s ease-in-out infinite alternate}
+@keyframes slotTick{0%{opacity:.62;transform:translate3d(0,-8px,0) scale(.95)}100%{opacity:1;transform:translate3d(0,7px,0) scale(1.025)}}
+.role-card.swap-in{animation:cardLand .55s cubic-bezier(.16,.95,.28,1) both;animation-delay:var(--delay,0ms)}
+.role-card.swap-in .role-name{animation:roleLand .55s cubic-bezier(.17,1,.25,1) both;animation-delay:var(--delay,0ms)}
+.role-card.swap-in::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(107deg,transparent 17%,#ffffff65 45%,transparent 72%);transform:translate3d(-140%,0,0);animation:landingShine .68s cubic-bezier(.25,.7,.3,1) both;animation-delay:var(--delay,0ms)}
+@keyframes cardLand{0%{filter:brightness(1.23);transform:translate3d(0,13px,0) scale(.965)}65%{filter:brightness(1.07);transform:translate3d(0,-6px,0) scale(1.013)}100%{filter:brightness(1);transform:translate3d(0,0,0) scale(1)}}
+@keyframes roleLand{0%{opacity:0;transform:translate3d(0,32px,0) scale(.85)}68%{opacity:1;transform:translate3d(0,-6px,0) scale(1.035)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes landingShine{0%{transform:translate3d(-140%,0,0)}100%{transform:translate3d(140%,0,0)}}
+.role-card.reveal{animation:cardRise .62s cubic-bezier(.12,.95,.23,1) both;animation-delay:calc(95ms + var(--delay,0ms))}
+.topic-box.reveal{animation:topicIn .58s cubic-bezier(.15,.95,.26,1) both}
+.role-card.swap-out .role-name{animation:roleDepart .18s cubic-bezier(.45,0,.8,.25) both;animation-delay:var(--delay,0ms)}
+@keyframes roleDepart{100%{opacity:0;transform:translate3d(0,-30px,0) scale(.83)}}
+@keyframes cardRise{0%{opacity:0;transform:translate3d(0,43px,0) scale(.93)}65%{opacity:1;transform:translate3d(0,-6px,0) scale(1.012)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes topicIn{0%{opacity:0;transform:translate3d(0,-19px,0) scale(.975)}78%{opacity:1;transform:translate3d(0,3px,0) scale(1.004)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+/* タップ地点から広がる小さなフィードバック */
+.tap-ripple{position:absolute;z-index:3;pointer-events:none;border-radius:50%;width:var(--diameter);height:var(--diameter);left:var(--ripple-x);top:var(--ripple-y);background:#ffffff66;transform:translate(-50%,-50%) scale(.08);animation:tapRipple .52s ease-out both}
+@keyframes tapRipple{0%{opacity:.7;transform:translate(-50%,-50%) scale(.08)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+/* 「視差効果を減らす」が有効な端末にのみ、明示的な演出ONの選択肢を表示 */
+.motion-option{display:none;border:1px solid #c5d9cc;background:#f9fdf8;color:#1d674b;border-radius:999px;font-size:12px;font-weight:900;padding:5px 10px;min-height:30px}
+.motion-option.visible{display:inline-flex;align-items:center;justify-content:center}
+.reduce-effects *, .reduce-effects *::before,.reduce-effects *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+
+
+/* V6 — 前版のフェード主体の演出を置き換える、明瞭な画面モーション。 */
+.count-button[data-count="2"],.role-card[data-player="2"]{color:#fff!important}
+.role-card[data-player="2"]{--sub:#ffffffe6!important}
+.count-button[data-count="2"] .count-unit{color:#fff}
+.role-card{perspective:850px;transform:translateZ(0);-webkit-transform:translateZ(0);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.role-card .role-name{transform-origin:center center;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;will-change:transform,opacity}
+.role-card.reeling{box-shadow:0 5px 0 #0000001a,0 0 0 3px #ffffff44 inset;transition:box-shadow .14s ease-out}
+.role-card.reeling::after{animation:ringTurn .5s ease-in-out infinite alternate}
+@keyframes ringTurn{to{transform:translate3d(-9px,-16px,0) scale(1.09);opacity:.85}}
+.role-card.just-settled::before{content:"";position:absolute;z-index:1;inset:-1px;pointer-events:none;background:linear-gradient(110deg,transparent 15%,#ffffff00 20%,#ffffff9e 45%,#ffffff05 65%,transparent 77%);transform:translateX(-120%);animation:cardGlint .47s cubic-bezier(.22,.7,.25,1) both}
+@keyframes cardGlint{to{transform:translateX(120%)}}
+.transition-iris{position:fixed;top:0;left:0;z-index:100;pointer-events:none;width:160px;height:160px;border-radius:50%;opacity:0;transform:translate3d(-50%,-50%,0) scale(0);background:#153f34;will-change:transform,opacity;contain:paint}
+/* 連続クリックによる連打も状態が分かるように、凹みのあるボタンの手触りは保持。 */
+.action:disabled{opacity:.93;filter:saturate(.92)}
+/* OS側で動きを減らしているときは非点滅の短い切り替えにする。 */
+.reduce-effects .role-card.reeling::after,.reduce-effects .role-card.just-settled::before{animation:none!important}
+
+
+/* V7: Information hierarchy — no English kicker, tagline, topic counter, or player count badge. */
+#play.active{justify-content:center}
+#home.active{display:flex;flex-direction:column;justify-content:center}
+#home{min-height:100dvh;padding:clamp(20px,4vh,48px) 0;gap:clamp(14px,2vh,22px)}
+.hero{min-height:clamp(205px,28dvh,292px);padding:clamp(28px,4.5vw,54px)}
+.hero h1{margin:0;position:relative;z-index:1;font-size:clamp(36px,5.2vw,65px);line-height:1.25}
+.start-panel{margin-top:0;padding-top:clamp(27px,3.6vw,43px);padding-bottom:clamp(28px,3.6vw,43px)}
+.start-panel h2{margin:0}
+.topline{justify-content:flex-start;min-height:36px;margin-bottom:12px}
+.topic-box{padding:clamp(22px,2.7vw,32px) clamp(22px,2.8vw,34px)}
+.topic-title{margin:0 0 9px;font-size:clamp(25px,3.1vw,40px);line-height:1.32}
+.topic-context{font-size:clamp(12px,1.3vw,15px);line-height:1.5}
+.roles{margin-top:15px}
+@media(max-width:700px){
+ #home{padding:clamp(16px,3.7vh,34px) 0;gap:13px}
+ .hero{min-height:clamp(165px,25dvh,235px);padding:25px 24px}
+ .hero h1{font-size:clamp(31px,7.8vw,43px);line-height:1.27}
+ .start-panel{padding:clamp(23px,3.8vh,33px) 11px clamp(24px,3.8vh,33px)}
+ .topline{min-height:31px;margin-bottom:7px}
+ .topic-box{padding:16px 17px}
+ .topic-title{font-size:clamp(21px,5.25vw,30px);margin:0 0 6px;line-height:1.32}
+ .topic-context{font-size:11px;line-height:1.47}
+ .roles{margin-top:10px}
+}
+@media(max-width:375px){
+ .hero h1{font-size:clamp(29px,8.5vw,33px)}
+ .topic-box{padding:13px 15px}
+ .topic-title{font-size:20px}
+}
+@media(max-height:680px) and (max-width:700px){
+ .hero{min-height:150px}
+ .topic-box{padding:12px 15px}
+ .topic-title{margin-bottom:4px}
+ .roles{margin-top:7px}
+}
+@media(max-height:530px) and (orientation:landscape){
+ #home{justify-content:flex-start}
+ .hero{min-height:120px}
+ .topic-box{padding:10px 15px}
+ .topic-title{font-size:21px;margin-bottom:4px}
+}
+</style>
+</head>
+<body>
+<main class="frame">
+<section id="home" class="screen active" aria-label="人数選択画面">
+<div class="hero"><h1>主語が変わると、<br>見え方が変わる。</h1></div>
+<div class="start-panel"><h2>何人で話す？</h2>
+<div class="count-buttons" role="group" aria-label="プレイ人数">
+<button type="button" class="count-button" data-count="1" aria-label="1人で始める"><span>1</span><span class="count-unit">人</span></button>
+<button type="button" class="count-button" data-count="2" aria-label="2人で始める"><span>2</span><span class="count-unit">人</span></button>
+<button type="button" class="count-button" data-count="3" aria-label="3人で始める"><span>3</span><span class="count-unit">人</span></button>
+<button type="button" class="count-button" data-count="4" aria-label="4人で始める"><span>4</span><span class="count-unit">人</span></button>
+<button type="button" class="count-button" data-count="5" aria-label="5人で始める"><span>5</span><span class="count-unit">人</span></button>
+</div></div>
+</section>
+<section id="play" class="screen" aria-label="話題と主語の表示画面">
+<div class="topline"><button id="back" class="back" type="button">← 人数を変える</button></div>
+<div id="topicBox" class="topic-box"><h2 id="topicTitle" class="topic-title"></h2><p id="topicContext" class="topic-context"></p></div>
+<div id="roles" class="roles" aria-label="各プレイヤーの主語" aria-live="polite" aria-atomic="true"></div>
+<div class="action-row"><button id="rerollRoles" class="action action-primary" type="button"><span class="action-icon" aria-hidden="true">↻</span>主語を変える</button><button id="rerollTopic" class="action action-secondary" type="button"><span class="action-icon" aria-hidden="true">⇄</span>話題ごと変える</button></div>
+</section>
+</main>
+<div id="transitionIris" class="transition-iris" aria-hidden="true"></div>
+<script>
+'use strict';
+const ROLE={"me":["私","self"],"pastMe":["5年前の私","time"],"futureMe":["5年後の私","time"],"olderMe":["30年後の私","time"],"grade1":["小学1年生","age"],"grade6":["小学6年生","age"],"grade9":["中学3年生","age"],"grade12":["高校3年生","age"],"uni":["大学生","age"],"teacher":["教師","school"],"parent":["親","family"],"senior":["高齢者","age"],"worker":["会社員","work"],"politician":["政治家","public"],"taxpayer":["納税者","public"],"family":["私の家族","family"],"friends":["私の友達","friends"],"classmate":["○組のメンバー","school"],"school":["全校生徒","school"],"osaka":["大阪人","region"],"kansai":["関西人","region"],"japanese":["日本人","national"],"asian":["アジア人","national"],"majority":["多数派","position"],"minority":["少数派","position"],"human":["人類","wide"],"pastJapan":["100年前の日本人","history"],"futureJapan":["100年後の日本人","history"],"wildlife":["野生動物","nature"],"earth":["地球","nature"]};
+const TOPICS=[{"id":"uniform","q":"学校の制服は必要か？","s":"制服を続けるか、私服を認めるか。学校で見直しが始まりました。","a":["grade9","parent"],"roles":["me","grade6","grade9","grade12","parent","teacher","classmate","school","futureMe"]},{"id":"homework","q":"宿題は毎日出すべきか？","s":"毎日の宿題をなくし、家庭学習を各自に任せる案が出ています。","a":["grade9","teacher"],"roles":["me","grade6","grade9","grade12","teacher","parent","friends","pastMe","futureMe"]},{"id":"rules","q":"校則は生徒が決めるべきか？","s":"多くの生徒は校則の緩和に賛成していますが、反対する声もあります。","a":["school","teacher"],"roles":["me","grade9","teacher","parent","classmate","school","majority","minority","futureMe"]},{"id":"phones","q":"学校でスマートフォンを使ってよいか？","s":"休み時間の使用を認める案が出ています。学習への影響を心配する声もあります。","a":["grade9","teacher"],"roles":["me","grade6","grade9","grade12","parent","teacher","classmate","school","pastMe","futureMe"]},{"id":"ai","q":"学校の課題にAIを使ってよいか？","s":"調べ学習や文章の下書きにAIを使うことを、学校で検討しています。","a":["grade9","teacher"],"roles":["me","grade9","grade12","uni","teacher","parent","school","futureMe","classmate"]},{"id":"tests","q":"テストの点数だけで学力を評価してよいか？","s":"発表や授業での取り組みも評価に含める案が出ています。","a":["grade9","teacher"],"roles":["me","grade6","grade9","grade12","teacher","parent","classmate","friends","pastMe","futureMe"]},{"id":"festival","q":"文化祭の出し物は多数決で決めるべきか？","s":"クラスの投票では、二つの案が僅差で競り合っています。","a":["majority","minority"],"roles":["me","friends","classmate","grade9","teacher","majority","minority","futureMe"]},{"id":"lunch","q":"学校の給食費を無料にするべきか？","s":"給食費を家庭ではなく、税金から支払う案が出ています。","a":["parent","taxpayer"],"roles":["me","grade1","grade6","grade9","parent","teacher","taxpayer","politician","family","school"]},{"id":"nine","q":"学校の始業時刻を9時にするべきか？","s":"朝の授業を遅らせると、放課後の時間も変わる可能性があります。","a":["grade9","parent"],"roles":["me","grade1","grade6","grade9","grade12","parent","teacher","family","classmate","school"]},{"id":"clean","q":"学校の掃除は生徒がするべきか？","s":"自分たちで掃除するか、清掃を外部の人に任せるかを考えています。","a":["grade9","teacher"],"roles":["me","grade1","grade6","grade9","parent","teacher","classmate","school","pastMe"]},{"id":"tourism","q":"大阪にもっと観光客を呼び込むべきか？","s":"観光によるにぎわいが期待される一方、混雑を心配する声もあります。","a":["osaka","japanese"],"roles":["me","osaka","kansai","japanese","asian","worker","senior","politician","futureMe"]},{"id":"park","q":"公園をなくして商業施設を建ててもよいか？","s":"子どもたちや鳥が集まる公園を取り壊し、商業施設を建てる計画です。","a":["grade6","senior"],"roles":["me","grade1","grade6","parent","senior","worker","politician","wildlife","grade9"]},{"id":"transit","q":"電車やバスの運賃を無料にするべきか？","s":"運賃を無料にすると便利ですが、運営費を税金などでまかなう必要があります。","a":["senior","taxpayer"],"roles":["me","grade9","uni","parent","senior","worker","taxpayer","politician","osaka","futureMe"]},{"id":"library","q":"新しい図書館を建てるべきか？","s":"予算は限られています。新設する案と、今の図書館を充実させる案があります。","a":["grade9","taxpayer"],"roles":["me","grade6","grade9","uni","parent","senior","taxpayer","politician","school","futureMe"]},{"id":"vote16","q":"選挙権を16歳から認めるべきか？","s":"今より若い世代にも投票を認める案について考えます。","a":["grade9","politician"],"roles":["me","grade9","grade12","uni","parent","teacher","senior","politician","japanese","futureMe"]},{"id":"cameras","q":"街の防犯カメラを増やすべきか？","s":"住民の多くは防犯のため増設に賛成。一方で、監視を心配する人もいます。","a":["majority","minority"],"roles":["me","grade9","parent","senior","worker","taxpayer","politician","majority","minority"]},{"id":"week","q":"週休3日制をもっと広げるべきか？","s":"休みが増える一方、職場によっては収入や仕事の進め方も変わります。","a":["worker","parent"],"roles":["me","uni","worker","parent","family","senior","politician","futureMe","olderMe"]},{"id":"disaster","q":"災害への備えは誰が中心になって進めるべきか？","s":"非常食や避難所の準備を、家庭と自治体でどう分担するか考えます。","a":["family","politician"],"roles":["me","grade6","grade9","parent","family","senior","taxpayer","politician","japanese","futureMe"]},{"id":"festivalTown","q":"地域のお祭りを税金で支えるべきか？","s":"参加者が減ってきたお祭りを続けるため、公費で支援する案が出ています。","a":["osaka","taxpayer"],"roles":["me","grade6","parent","senior","osaka","kansai","taxpayer","politician","pastJapan"]},{"id":"signs","q":"街の案内表示は、何語まで用意するべきか？","s":"駅や病院の案内板には限られたスペースしかありません。","a":["japanese","asian"],"roles":["me","osaka","kansai","japanese","asian","senior","worker","politician","futureMe"]},{"id":"forest","q":"森を切り開いて道路を造るべきか？","s":"移動時間は短くなりますが、動物たちのすみかに影響が出る計画です。","a":["worker","wildlife"],"roles":["me","parent","senior","worker","taxpayer","politician","wildlife","earth","futureJapan","human"]},{"id":"plastic","q":"使い捨て容器をやめるべきか？","s":"ごみは減りますが、容器を洗う手間や費用が増える可能性があります。","a":["grade9","earth"],"roles":["me","grade9","parent","worker","politician","japanese","wildlife","earth","futureJapan","human"]},{"id":"waste","q":"売れ残りの食品を税金で届けるべきか？","s":"店の売れ残りを集め、必要な人に届ける公共サービスの案が出ています。","a":["worker","taxpayer"],"roles":["me","grade6","grade9","worker","taxpayer","politician","earth","human","japanese"]},{"id":"trees","q":"街路樹を増やすため、道路を狭くしてよいか？","s":"暑さを和らげるため、車道の一部を緑地に変える案が出ています。","a":["senior","wildlife"],"roles":["me","grade1","grade6","parent","senior","worker","osaka","politician","wildlife","futureJapan"]},{"id":"zoo","q":"動物園で野生動物を飼うことを認めるべきか？","s":"生き物を学び守る役割がある一方、飼育環境を心配する声もあります。","a":["grade6","wildlife"],"roles":["me","grade1","grade6","parent","teacher","grade9","wildlife","japanese","human","futureJapan"]},{"id":"energy","q":"里山に風力発電の設備を建ててよいか？","s":"電気をつくれますが、景観や野生動物への影響を心配する声もあります。","a":["worker","wildlife"],"roles":["me","grade9","parent","senior","worker","taxpayer","politician","wildlife","earth","futureJapan"]},{"id":"wild","q":"住宅地に来た野生動物を捕獲するべきか？","s":"山の近くの住宅地で、野生動物による被害が続いています。","a":["parent","wildlife"],"roles":["me","grade6","parent","senior","worker","politician","wildlife","japanese","family"]},{"id":"climate","q":"温暖化対策は、今の負担が増えても進めるべきか？","s":"省エネ設備を広めるには、導入時に大きな費用がかかります。","a":["me","futureJapan"],"roles":["me","grade9","parent","worker","taxpayer","politician","japanese","asian","earth","futureJapan","human"]},{"id":"fashion","q":"まだ着られる服を、流行が変わるたびに買い替えてよいか？","s":"安い服を買いやすくなった一方、大量生産や廃棄が問題になっています。","a":["grade9","earth"],"roles":["me","grade9","uni","parent","worker","japanese","asian","earth","pastJapan","futureMe"]},{"id":"sea","q":"魚の数を守るため、漁を制限するべきか？","s":"魚を守るために漁の量を減らすと、魚の値段が上がる可能性があります。","a":["japanese","wildlife"],"roles":["me","grade9","parent","senior","politician","japanese","asian","wildlife","earth","futureJapan","human"]},{"id":"selfgroup","q":"自分の希望よりクラスの決定を優先するべきか？","s":"クラスの多数決で決まった活動が、自分のやりたいこととは違う場合です。","a":["me","classmate"],"roles":["me","friends","classmate","grade9","teacher","majority","minority","futureMe","school"]},{"id":"majority","q":"多くの人が賛成する意見は、正しいと言えるか？","s":"ある意見にはクラスの8割が賛成し、2割が反対しています。","a":["majority","minority"],"roles":["me","friends","classmate","grade9","teacher","majority","minority","futureMe"]},{"id":"challenge","q":"成功する見込みが低くても、挑戦したほうがよいか？","s":"難しい目標に挑むか、今できることを確実に続けるか迷っています。","a":["me","olderMe"],"roles":["me","pastMe","futureMe","olderMe","grade1","grade9","grade12","uni","parent","senior","teacher"]},{"id":"result","q":"結果と努力の過程、どちらを重く評価すべきか？","s":"学校の活動で、よい結果を出した班と、努力を重ねた班がありました。","a":["grade9","teacher"],"roles":["me","grade6","grade9","grade12","teacher","parent","classmate","friends","futureMe"]},{"id":"freedom","q":"公園でのボール遊びを禁止するべきか？","s":"遊びたい子どもがいる一方、危ないと感じている近所の住民もいます。","a":["grade6","senior"],"roles":["me","grade1","grade6","grade9","parent","senior","friends","family","politician"]},{"id":"truth","q":"友達の作品に、思ったことを正直に伝えるべきか？","s":"友達から率直な感想を求められました。気になる点もあります。","a":["me","friends"],"roles":["me","friends","classmate","grade9","parent","teacher","pastMe","futureMe"]},{"id":"anonymous","q":"インターネットで匿名の発言を認めるべきか？","s":"少数意見を言いやすくなる一方、無責任な発言も問題になります。","a":["me","minority"],"roles":["me","grade9","uni","parent","teacher","politician","minority","japanese","futureMe"]},{"id":"privacy","q":"学校は安全のために生徒の位置情報を確認してよいか？","s":"登下校中の安全を確かめるため、位置情報を学校が見る案が出ています。","a":["grade9","parent"],"roles":["me","grade6","grade9","parent","teacher","classmate","school","politician"]},{"id":"moneytime","q":"お金と自由な時間、どちらを大切にしたいか？","s":"収入は多いが忙しい生活と、収入は少ないが時間に余裕のある生活。","a":["worker","olderMe"],"roles":["me","pastMe","futureMe","olderMe","grade9","uni","worker","parent","senior","family","pastJapan"]},{"id":"future","q":"今の楽しみと将来の準備、どちらを優先したいか？","s":"自由な時間を趣味に使うか、将来のための勉強に使うか迷っています。","a":["me","olderMe"],"roles":["me","pastMe","futureMe","olderMe","grade6","grade9","grade12","uni","parent","senior"]},{"id":"travel","q":"修学旅行の行き先は生徒が決めるべきか？","s":"多くの生徒は遠くへ行きたい一方、費用や安全を心配する声もあります。","a":["grade9","parent"],"roles":["me","grade6","grade9","teacher","parent","classmate","school","majority","minority"]},{"id":"clubs","q":"部活動への参加を必須にするべきか？","s":"放課後の活動を全員参加にするか、本人の希望に任せるか考えます。","a":["grade9","teacher"],"roles":["me","grade6","grade9","grade12","parent","teacher","classmate","school","friends","futureMe"]},{"id":"speech","q":"授業では全員に口頭発表を求めるべきか？","s":"発表が得意な生徒も、緊張して話しにくい生徒もいます。","a":["me","teacher"],"roles":["me","grade6","grade9","teacher","classmate","friends","parent","pastMe","school"]},{"id":"global","q":"日本の予算を外国の災害支援にも使うべきか？","s":"国内にも支援を必要とする人がいる中、海外への援助を増やす案です。","a":["japanese","human"],"roles":["me","grade9","osaka","kansai","japanese","asian","human","politician","taxpayer","futureJapan"]},{"id":"history","q":"伝統行事を今の暮らしに合わせて変えてよいか？","s":"参加しやすくするため、長く続く行事の日程や内容を変える案です。","a":["pastJapan","futureJapan"],"roles":["me","pastMe","grade9","parent","senior","osaka","japanese","pastJapan","futureJapan"]},{"id":"citycountry","q":"都会に人が集中することは、よいことか？","s":"仕事や学校が都市に集まり、地方では住む人が減っています。","a":["osaka","japanese"],"roles":["me","futureMe","olderMe","grade9","uni","parent","senior","worker","osaka","japanese","politician","futureJapan"]},{"id":"robot","q":"人間の仕事をAIやロボットに任せるべきか？","s":"作業が速くなる一方、仕事の内容や働き方も変わっていきます。","a":["worker","human"],"roles":["me","futureMe","olderMe","uni","worker","parent","senior","politician","japanese","human","futureJapan"]},{"id":"communication","q":"大切な話は、直接会って伝えるべきか？","s":"謝罪や感謝を伝えるとき、手紙やメッセージを使う方法もあります。","a":["me","friends"],"roles":["me","friends","classmate","grade9","uni","parent","senior","pastMe","pastJapan","futureMe"]},{"id":"animalpets","q":"ペットを飼う人に、厳しい条件を設けるべきか？","s":"飼育放棄を減らすため、飼い主の準備や責任を事前に確認する案です。","a":["parent","family"],"roles":["me","grade1","grade6","parent","family","senior","politician","japanese","futureMe"]},{"id":"event","q":"大阪で大きなイベントを開くなら、不便を我慢するべきか？","s":"市の予算を使って開催すると、道路規制や混雑が続きます。街のにぎわいも期待されます。","a":["osaka","senior"],"roles":["me","grade9","parent","senior","worker","osaka","kansai","taxpayer","politician"]},{"id":"voteclass","q":"クラスの仕事は、得意な人に任せるべきか？","s":"行事の準備で、得意な人に仕事が集中しています。全員で分担する案もあります。","a":["me","classmate"],"roles":["me","friends","classmate","grade9","teacher","grade6","school","grade12","uni"]}];
+const $=id=>document.getElementById(id);
+const motionQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
+// 授業用アプリでは、iPadOSの視差効果設定に関わらず演出を既定で有効にする。
+// アニメーションを使用できない旧ブラウザでは即時切り替えにフォールバック。
+const reduced=()=>false;
+if(motionQuery.addEventListener)motionQuery.addEventListener('change',()=>document.documentElement.classList.toggle('reduce-effects',reduced()));
+document.documentElement.classList.toggle('reduce-effects',reduced());
+let count=0,topic=null,roles=[],topicDeck=[],lastTopic=null,busy=false,picking=false;
+function label(id){return ROLE[id][0]}
+function random(n){return Math.floor(Math.random()*n)}
+function shuffle(a){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=random(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
+function nextTopic(){
+ if(!topicDeck.length){topicDeck=shuffle(TOPICS.map(t=>t.id));if(topicDeck.length>1&&topicDeck[topicDeck.length-1]===lastTopic){[topicDeck[0],topicDeck[topicDeck.length-1]]=[topicDeck[topicDeck.length-1],topicDeck[0]]}}
+ const id=topicDeck.pop();lastTopic=id;return TOPICS.find(t=>t.id===id)
+}
+// 既存の各話題の候補主語・重要主語は変えず、相異なる立場を優先する。
+function drawRoles(t,n,old=[]){
+ const pool=t.roles,prev=new Set(old),anchor=t.a;
+ const maxFresh=old.length?Math.min(n,pool.filter(id=>!prev.has(id)).length):0;
+ let best=null,bestScore=-Infinity;
+ for(let trial=0;trial<105;trial++){
+  const result=[],picked=new Set();
+  while(result.length<n){
+   const freshSoFar=result.filter(id=>!prev.has(id)).length;
+   const mustBeFresh=old.length&&maxFresh-freshSoFar>=n-result.length;
+   const avail=pool.filter(id=>!picked.has(id)&&(!mustBeFresh||!prev.has(id)));
+   const weights=avail.map(id=>{let w=.8+Math.random()*.5;if(!prev.has(id))w*=old.length?3.3:1;if(anchor.includes(id))w*=old.length?1.35:2.1;w*=Math.pow(.47,result.filter(x=>ROLE[x][1]===ROLE[id][1]).length);return w});
+   let at=Math.random()*weights.reduce((a,b)=>a+b,0),index=0;
+   for(;index<avail.length-1;index++){at-=weights[index];if(at<=0)break}
+   result.push(avail[index]);picked.add(avail[index]);
+  }
+  const perm=shuffle(result),fresh=perm.filter(id=>!prev.has(id)).length,anchorCount=perm.filter(id=>anchor.includes(id)).length,sameSeat=perm.filter((id,i)=>id===old[i]).length,cats=new Set(perm.map(id=>ROLE[id][1])).size;
+  const score=(old.length?fresh*3.5:0)+cats*.6+Math.min(anchorCount,n>=4?2:1)*(old.length?.22:1.4)-sameSeat*2.8+Math.random()*2.3-(old.length===0&&n>=2&&anchorCount===0?9:0);
+  if(score>bestScore){bestScore=score;best=perm}
+ }
+ return best;
+}
+function labelClass(text){const n=[...text].length;return n>=10?'very-long':n>=6?'long':''}
+function updateRoleName(el,id){el.textContent=label(id);el.className='role-name '+labelClass(label(id))}
+function createCards(){
+ const parent=$('roles');parent.replaceChildren();parent.dataset.count=String(count);parent.style.setProperty('--num',String(count));
+ roles.forEach((id,i)=>{
+  const card=document.createElement('article');card.className='role-card';card.dataset.player=String(i+1);
+  const sub=document.createElement('span');sub.className='player-label';sub.textContent=`${i+1}人目`;
+  const title=document.createElement('div');updateRoleName(title,id);
+  card.append(sub,title);parent.append(card);
+ });
+}
+function showTopic(){
+ $('topicTitle').textContent=topic.q;$('topicContext').textContent=topic.s;
+
+}
+function view(which){document.querySelectorAll('.screen').forEach(el=>{el.classList.toggle('active',el.id===which);el.classList.remove('enter','leaving')});window.scrollTo({top:0,left:0,behavior:'auto'});}
+function lock(yes){busy=yes;$('rerollRoles').disabled=yes;$('rerollTopic').disabled=yes;$('back').disabled=yes}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+async function animate(el,frames,{duration=280,easing='ease-out',delay=0}={}){
+ if(reduced()||typeof el.animate!=='function')return;
+ const a=el.animate(frames,{duration,easing,delay,fill:'both'});
+ try{await a.finished}catch(_e){};
+ a.cancel();
+}
+function freshTopic(){topic=nextTopic();roles=drawRoles(topic,count);showTopic();createCards()}
+// ボタンの中心から円が広がり、覆った瞬間に内容を入れ替える。WebKit向けtransformで処理。
+async function irisTransition(source,color,replace,reveal){
+ if(reduced()||typeof $('transitionIris').animate!=='function'){
+  replace();return;
+ }
+ const ir=$('transitionIris'),b=source&&source.getBoundingClientRect?source.getBoundingClientRect():null;
+ const x=b?b.left+b.width/2:window.innerWidth/2,y=b?b.top+b.height/2:window.innerHeight/2;
+ const r=Math.max(Math.hypot(x,y),Math.hypot(window.innerWidth-x,y),Math.hypot(x,window.innerHeight-y),Math.hypot(window.innerWidth-x,window.innerHeight-y));
+ const scale=Math.max(1,(r+90)/80);
+ ir.style.left=x+'px';ir.style.top=y+'px';ir.style.background=color;
+ ir.style.opacity='1';
+ // アニメーション終了時の見た目をstyleとして保持してからfillを解除する。
+ const a=ir.animate([{transform:'translate3d(-50%,-50%,0) scale(.015)',opacity:1},{transform:`translate3d(-50%,-50%,0) scale(${scale})`,opacity:1}],{duration:430,easing:'cubic-bezier(.32,.02,.13,1)',fill:'forwards'});
+ try{await a.finished}catch(_e){};
+ ir.style.transform=`translate3d(-50%,-50%,0) scale(${scale})`;a.cancel();
+ replace();
+ if(reveal)reveal();
+ await animate(ir,[{opacity:1},{opacity:0}],{duration:365,easing:'cubic-bezier(.2,.65,.3,1)'});
+ ir.style.opacity='0';ir.style.transform='translate3d(-50%,-50%,0) scale(0)';
+}
+function revealPlay(){
+ if(reduced()||typeof $('topicBox').animate!=='function')return;
+ const topicBox=$('topicBox');
+ topicBox.animate([{opacity:0,transform:'translate3d(0,-36px,0) scale(.96)'},{opacity:1,transform:'translate3d(0,4px,0) scale(1.004)',offset:.77},{opacity:1,transform:'translate3d(0,0,0) scale(1)'}],{duration:575,delay:35,easing:'cubic-bezier(.13,.8,.2,1)',fill:'both'}).finished.then(()=>topicBox.getAnimations().forEach(a=>a.cancel())).catch(()=>{});
+ [...$('roles').children].forEach((card,i)=>{
+  card.animate([{opacity:0,transform:'translate3d(0,67px,0) scale(.88)'},{opacity:1,transform:'translate3d(0,-9px,0) scale(1.02)',offset:.75},{opacity:1,transform:'translate3d(0,0,0) scale(1)'}],{duration:590,delay:85+i*82,easing:'cubic-bezier(.13,.82,.2,1)',fill:'both'}).finished.then(()=>card.getAnimations().forEach(a=>a.cancel())).catch(()=>{});
+ });
+}
+function revealHome(){
+ if(reduced()||typeof document.querySelector('.hero').animate!=='function')return;
+ [['.hero',0],['.start-panel',95]].forEach(([sel,delay])=>{
+  const el=document.querySelector(sel);
+  el.animate([{opacity:0,transform:'translate3d(0,28px,0) scale(.975)'},{opacity:1,transform:'translate3d(0,0,0) scale(1)'}],{duration:510,delay,easing:'cubic-bezier(.16,.92,.24,1)'});
+ });
+}
+async function begin(n){
+ if(picking||busy||n<1||n>5)return;
+ picking=true;const btn=document.querySelector(`.count-button[data-count="${n}"]`);
+ if(!reduced()&&typeof btn.animate==='function')btn.animate([{transform:'translateY(0) scale(1)'},{transform:'translateY(-7px) scale(1.10)',offset:.48},{transform:'translateY(1px) scale(.97)'}],{duration:285,easing:'ease-out'});
+ await sleep(reduced()?0:110);
+ await irisTransition(btn,getComputedStyle(btn).backgroundColor,()=>{
+  count=n;topicDeck=[];lastTopic=null;freshTopic();view('play');
+ },revealPlay);
+ picking=false;
+}
+async function changeTopic(){
+ if(busy)return;
+ lock(true);
+ await irisTransition($('rerollTopic'),'#294e80',freshTopic,revealPlay);
+ lock(false);
+}
+// 文字を縦方向に回転させる「めくり」式。途中候補は同じ話題の候補群から選ぶ。
+async function spinCard(card,id,i){
+ const el=card.querySelector('.role-name');
+ await sleep(i*68);
+ if(reduced()||typeof el.animate!=='function'){updateRoleName(el,id);return}
+ const choices=shuffle(topic.roles.filter(x=>x!==id&&x!==roles[i])).slice(0,2).concat(id);
+ card.classList.add('reeling');
+ // 最初は勢いよく、最後の主語だけは明瞭に、ゆっくり止める。
+ for(let k=0;k<choices.length;k++){
+  await animate(el,[{opacity:1,transform:'perspective(650px) rotateX(0deg) translate3d(0,0,0)'},{opacity:0,transform:'perspective(650px) rotateX(-78deg) translate3d(0,-25px,0)'}],{duration:k===2?115:72,easing:'cubic-bezier(.55,.04,.72,.45)'});
+  el.style.opacity='0';
+  updateRoleName(el,choices[k]);
+  const last=k===choices.length-1;
+  await animate(el,[{opacity:0,transform:'perspective(650px) rotateX(73deg) translate3d(0,31px,0)',filter:'blur(2px)'},{opacity:1,transform:'perspective(650px) rotateX(-5deg) translate3d(0,-3px,0)',filter:'blur(0px)',offset:last?.73:.9},{opacity:1,transform:'perspective(650px) rotateX(0deg) translate3d(0,0,0)',filter:'blur(0px)'}],{duration:last?245:96,easing:last?'cubic-bezier(.16,.95,.2,1)':'ease-out'});
+  el.style.opacity='';
+ }
+ card.classList.remove('reeling');
+ card.classList.remove('just-settled');void card.offsetWidth;card.classList.add('just-settled');
+ card.animate([{transform:'translate3d(0,0,0) scale(.975)'},{transform:'translate3d(0,-7px,0) scale(1.032)',offset:.48},{transform:'translate3d(0,0,0) scale(1)'}],{duration:300,easing:'cubic-bezier(.15,.95,.2,1)'});
+ setTimeout(()=>card.classList.remove('just-settled'),515);
+}
+async function changeRoles(){
+ if(busy||!topic)return;
+ lock(true);
+ const fresh=drawRoles(topic,count,roles),cards=[...$('roles').children];
+ // 主語だけを切り替え、話題とカード色は固定。
+ await Promise.all(cards.map((card,i)=>spinCard(card,fresh[i],i)));
+ roles=fresh;
+ lock(false);
+}
+async function back(){
+ if(busy||picking||!$('play').classList.contains('active'))return;
+ lock(true);
+ await irisTransition($('back'),'#153f34',()=>view('home'),revealHome);
+ lock(false);
+}
+function setup(){
+ document.querySelectorAll('.count-button').forEach(b=>b.addEventListener('click',()=>begin(Number(b.dataset.count))));
+ $('rerollRoles').addEventListener('click',changeRoles);
+ $('rerollTopic').addEventListener('click',changeTopic);
+ $('back').addEventListener('click',back);
+ document.addEventListener('keydown',e=>{
+  if(e.repeat||e.metaKey||e.ctrlKey||e.altKey)return;
+  if($('home').classList.contains('active')&&/^[1-5]$/.test(e.key)){begin(Number(e.key));return}
+  if(!$('play').classList.contains('active')||e.target.closest('button,input'))return;
+  if(e.key===' '||e.key==='Enter'){e.preventDefault();changeRoles()}
+  else if(e.key.toLowerCase()==='t'){changeTopic()}
+  else if(e.key==='Escape'){back()}
+ });
+}
+setup();
+</script>
+</body>
+</html>
